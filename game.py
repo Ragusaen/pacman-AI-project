@@ -98,7 +98,7 @@ class Configuration:
         x, y = self.pos
         return x == int(x) and y == int(y)
 
-    def __eq__(self, other: None):
+    def __eq__(self, other: None) -> bool:
         if other == None:
             return False
         return (self.pos == other.pos and self.direction == other.direction)
@@ -147,7 +147,7 @@ class AgentState:
         else:
             return "Ghost: " + str(self.configuration)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Optional["AgentState"]) -> bool:
         if other == None:
             return False
         return self.configuration == other.configuration and self.scaredTimer == other.scaredTimer
@@ -205,7 +205,7 @@ class Grid:
         out.reverse()
         return '\n'.join([''.join(x) for x in out])
 
-    def __eq__(self, other):
+    def __eq__(self, other: Optional["Grid"]) -> bool:
         if other == None:
             return False
         return self.data == other.data

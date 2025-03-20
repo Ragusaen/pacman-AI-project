@@ -15,6 +15,7 @@
 from game import Agent
 from game import Directions
 import random
+from typing import List
 
 
 class KeyboardAgent(Agent):
@@ -28,7 +29,7 @@ class KeyboardAgent(Agent):
     SOUTH_KEY = 's'
     STOP_KEY = 'q'
 
-    def __init__(self, index=0, **kwargs):
+    def __init__(self, index: int=0, **kwargs):
 
         self.lastMove = Directions.STOP
         self.index = index
@@ -58,7 +59,7 @@ class KeyboardAgent(Agent):
         self.lastMove = move
         return move
 
-    def getMove(self, legal):
+    def getMove(self, legal: List[str]) -> str:
         move = Directions.STOP
         if (self.WEST_KEY in self.keys or 'Left' in self.keys) and Directions.WEST in legal:
             move = Directions.WEST
