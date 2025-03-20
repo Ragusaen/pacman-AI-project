@@ -33,6 +33,7 @@ import heapq
 import random
 import io
 import functools
+from typing import Tuple, Union
 
 class Experiences(object):
     def __init__(self, test_name):
@@ -260,7 +261,7 @@ class PriorityQueueWithFunction(PriorityQueue):
         PriorityQueue.push(self, item, self.priorityFunction(item))
 
 
-def manhattanDistance(xy1, xy2):
+def manhattanDistance(xy1: Union[Tuple[float, float], Tuple[int, int]], xy2: Tuple[int, int]) -> Union[float, int]:
     "Returns the Manhattan distance between points xy1 and xy2"
     return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
@@ -313,7 +314,7 @@ class Counter(dict):
     also be normalized and their total count and arg max can be extracted.
     """
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: str) -> float:
         self.setdefault(idx, 0)
         return dict.__getitem__(self, idx)
 
@@ -360,7 +361,7 @@ class Counter(dict):
         sortedItems.sort(key=functools.cmp_to_key(compare))
         return [x[0] for x in sortedItems]
 
-    def totalCount(self):
+    def totalCount(self) -> float:
         """
         Returns the sum of counts for all keys.
         """
@@ -539,7 +540,7 @@ def nSample(distribution, values, n):
     return samples
 
 
-def sample(distribution, values=None):
+def sample(distribution: Counter, values: None=None) -> str:
     if type(distribution) == Counter:
         items = sorted(distribution.items())
         distribution = [i[1] for i in items]
@@ -576,7 +577,7 @@ def flipCoin(p):
     return r < p
 
 
-def chooseFromDistribution(distribution):
+def chooseFromDistribution(distribution: Counter) -> str:
     "Takes either a counter or a list of (prob, key) pairs and samples"
     if type(distribution) == dict or type(distribution) == Counter:
         return sample(distribution)
@@ -588,7 +589,7 @@ def chooseFromDistribution(distribution):
             return element
 
 
-def nearestPoint(pos):
+def nearestPoint(pos: Tuple[int, int]) -> Tuple[int, int]:
     """
     Finds the nearest grid point to a position (discretizes).
     """

@@ -17,6 +17,7 @@ from game import Grid
 import os
 import random
 from functools import reduce
+from typing import List
 
 VISIBILITY_MATRIX_CACHE = {}
 
@@ -26,7 +27,7 @@ class Layout:
     A Layout manages the static information about the game board.
     """
 
-    def __init__(self, layoutText):
+    def __init__(self, layoutText: List[str]):
         self.width = len(layoutText[0])
         self.height = len(layoutText)
         self.walls = Grid(self.width, self.height, False)
@@ -39,7 +40,7 @@ class Layout:
         self.totalFood = len(self.food.asList())
         # self.initializeVisibilityMatrix()
 
-    def getNumGhosts(self):
+    def getNumGhosts(self) -> int:
         return self.numGhosts
 
     def initializeVisibilityMatrix(self):
@@ -93,13 +94,13 @@ class Layout:
         row, col = [int(x) for x in pacPos]
         return ghostPos in self.visibility[row][col][pacDirection]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(self.layoutText)
 
-    def deepCopy(self):
+    def deepCopy(self) -> "Layout":
         return Layout(self.layoutText[:])
 
-    def processLayoutText(self, layoutText):
+    def processLayoutText(self, layoutText: List[str]):
         """
         Coordinates are flipped from the input format to the (x,y) convention here
 
@@ -120,7 +121,7 @@ class Layout:
         self.agentPositions.sort()
         self.agentPositions = [(i == 0, pos) for i, pos in self.agentPositions]
 
-    def processLayoutChar(self, x, y, layoutChar):
+    def processLayoutChar(self, x: int, y: int, layoutChar: str):
         if layoutChar == '%':
             self.walls[x][y] = True
         elif layoutChar == '.':
@@ -137,7 +138,7 @@ class Layout:
             self.numGhosts += 1
 
 
-def getLayout(name, back=2):
+def getLayout(name: str, back: int=2) -> Layout:
     if name.endswith('.lay'):
         layout = tryToLoad('layouts/' + name)
         if layout == None:
@@ -154,7 +155,7 @@ def getLayout(name, back=2):
     return layout
 
 
-def tryToLoad(fullname):
+def tryToLoad(fullname: str) -> Layout:
     if(not os.path.exists(fullname)):
         return None
     f = open(fullname)

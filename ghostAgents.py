@@ -21,7 +21,7 @@ import util
 
 
 class GhostAgent(Agent):
-    def __init__(self, index):
+    def __init__(self, index: int):
         self.index = index
 
     def getAction(self, state):

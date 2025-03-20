@@ -26,8 +26,5 @@ class PlanningAgent(game.Agent):
         # Time limit: approx 1 second
         # Look-up offline policy or online search with MCTS/LRTDP using some pre-computed value function?
 
-        print(state.getPacmanState())
-        for ghost in state.getGhostStates():
-            print(ghost)
-
-        return Directions.STOP
+        actions = [a for a in state.getLegalPacmanActions() if a != Directions.STOP]
+        return random.choice(actions)

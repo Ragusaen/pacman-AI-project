@@ -26,6 +26,9 @@ import os
 import traceback
 import sys
 
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from layout import Layout
 #######################
 # Parts worth reading #
 #######################
@@ -81,26 +84,26 @@ class Configuration:
     horizontally and y increases vertically.  Therefore, north is the direction of increasing y, or (0,1).
     """
 
-    def __init__(self, pos, direction):
+    def __init__(self, pos: Union[Tuple[float, float], Tuple[int, int]], direction: str):
         self.pos = pos
         self.direction = direction
 
-    def getPosition(self):
+    def getPosition(self) -> Union[Tuple[float, float], Tuple[int, int]]:
         return (self.pos)
 
-    def getDirection(self):
+    def getDirection(self) -> str:
         return self.direction
 
     def isInteger(self):
         x, y = self.pos
         return x == int(x) and y == int(y)
 
-    def __eq__(self, other):
+    def __eq__(self, other: None):
         if other == None:
             return False
         return (self.pos == other.pos and self.direction == other.direction)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         x = hash(self.pos)
         y = hash(self.direction)
         return hash(x + 13 * y)
@@ -108,7 +111,7 @@ class Configuration:
     def __str__(self):
         return "(x,y)="+str(self.pos)+", "+str(self.direction)
 
-    def generateSuccessor(self, vector):
+    def generateSuccessor(self, vector: Union[Tuple[float, float], Tuple[int, int]]) -> "Configuration":
         """
         Generates a new configuration reached by translating the current
         configuration by the action vector.  This is a low-level call and does
@@ -129,7 +132,7 @@ class AgentState:
     AgentStates hold the state of an agent (configuration, speed, scared, etc).
     """
 
-    def __init__(self, startConfiguration, isPacman):
+    def __init__(self, startConfiguration: Configuration, isPacman: bool):
         self.start = startConfiguration
         self.configuration = startConfiguration
         self.isPacman = isPacman
@@ -149,10 +152,10 @@ class AgentState:
             return False
         return self.configuration == other.configuration and self.scaredTimer == other.scaredTimer
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(hash(self.configuration) + 13 * hash(self.scaredTimer))
 
-    def copy(self):
+    def copy(self) -> "AgentState":
         state = AgentState(self.start, self.isPacman)
         state.configuration = self.configuration
         state.scaredTimer = self.scaredTimer
@@ -160,7 +163,7 @@ class AgentState:
         state.numReturned = self.numReturned
         return state
 
-    def getPosition(self):
+    def getPosition(self) -> Union[Tuple[float, float], Tuple[int, int]]:
         if self.configuration == None:
             return None
         return self.configuration.getPosition()
@@ -178,7 +181,7 @@ class Grid:
     The __str__ method constructs an output that is oriented like a pacman board.
     """
 
-    def __init__(self, width, height, initialValue=False, bitRepresentation=None):
+    def __init__(self, width: int, height: int, initialValue: bool=False, bitRepresentation: None=None):
         if initialValue not in [False, True]:
             raise Exception('Grids can only contain booleans')
         self.CELLS_PER_INT = 30
@@ -190,7 +193,7 @@ class Grid:
         if bitRepresentation:
             self._unpackBits(bitRepresentation)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> List[bool]:
         return self.data[i]
 
     def __setitem__(self, key, item):
@@ -207,7 +210,7 @@ class Grid:
             return False
         return self.data == other.data
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         # return hash(str(self))
         base = 1
         h = 0
@@ -218,23 +221,23 @@ class Grid:
                 base *= 2
         return hash(h)
 
-    def copy(self):
+    def copy(self) -> "Grid":
         g = Grid(self.width, self.height)
         g.data = [x[:] for x in self.data]
         return g
 
-    def deepCopy(self):
+    def deepCopy(self) -> "Grid":
         return self.copy()
 
-    def shallowCopy(self):
+    def shallowCopy(self) -> "Grid":
         g = Grid(self.width, self.height)
         g.data = self.data
         return g
 
-    def count(self, item=True):
+    def count(self, item: bool=True) -> int:
         return sum([x.count(item) for x in self.data])
 
-    def asList(self, key=True):
+    def asList(self, key: bool=True) -> List[Tuple[int, int]]:
         list = []
         for x in range(self.width):
             for y in range(self.height):
@@ -319,7 +322,7 @@ class Actions:
 
     TOLERANCE = .001
 
-    def reverseDirection(action):
+    def reverseDirection(action: str) -> str:
         if action == Directions.NORTH:
             return Directions.SOUTH
         if action == Directions.SOUTH:
@@ -331,7 +334,7 @@ class Actions:
         return action
     reverseDirection = staticmethod(reverseDirection)
 
-    def vectorToDirection(vector):
+    def vectorToDirection(vector: Union[Tuple[float, float], Tuple[int, int]]) -> str:
         dx, dy = vector
         if dy > 0:
             return Directions.NORTH
@@ -344,12 +347,12 @@ class Actions:
         return Directions.STOP
     vectorToDirection = staticmethod(vectorToDirection)
 
-    def directionToVector(direction, speed=1.0):
+    def directionToVector(direction: str, speed: Union[float, int]=1.0) -> Union[Tuple[float, float], Tuple[int, int]]:
         dx, dy = Actions._directions[direction]
         return (dx * speed, dy * speed)
     directionToVector = staticmethod(directionToVector)
 
-    def getPossibleActions(config, walls):
+    def getPossibleActions(config: Configuration, walls: Grid) -> List[str]:
         possible = []
         x, y = config.pos
         x_int, y_int = int(x + 0.5), int(y + 0.5)
@@ -395,7 +398,7 @@ class Actions:
 
 class GameStateData:
 
-    def __init__(self, prevState=None):
+    def __init__(self, prevState: Optional['GameStateData']=None):
         """
         Generates a new data packet by copying information from its predecessor.
         """
@@ -415,7 +418,7 @@ class GameStateData:
         self._win = False
         self.scoreChange = 0
 
-    def deepCopy(self):
+    def deepCopy(self) -> "GameStateData":
         state = GameStateData(self)
         state.food = self.food.deepCopy()
         state.layout = self.layout.deepCopy()
@@ -425,13 +428,13 @@ class GameStateData:
         state._capsuleEaten = self._capsuleEaten
         return state
 
-    def copyAgentStates(self, agentStates):
+    def copyAgentStates(self, agentStates: List[AgentState]) -> List[AgentState]:
         copiedStates = []
         for agentState in agentStates:
             copiedStates.append(agentState.copy())
         return copiedStates
 
-    def __eq__(self, other):
+    def __eq__(self, other: None):
         """
         Allows two states to be compared.
         """
@@ -448,7 +451,7 @@ class GameStateData:
             return False
         return True
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Allows states to be keys of dictionaries.
         """
@@ -515,7 +518,7 @@ class GameStateData:
             return '3'
         return 'E'
 
-    def initialize(self, layout, numGhostAgents):
+    def initialize(self, layout: 'Layout', numGhostAgents: int):
         """
         Creates an initial game state from a layout array (see layout.py).
         """
@@ -585,7 +588,7 @@ class Game:
     OLD_STDOUT = None
     OLD_STDERR = None
 
-    def mute(self, agentIndex):
+    def mute(self, agentIndex: int):
         if not self.muteAgents:
             return
         global OLD_STDOUT, OLD_STDERR
