@@ -131,12 +131,16 @@ class TSPAgent(game.Agent):
 
         print(time.time() - t0)
         if diff == (1, 0):
+            print("EAST")
             return Directions.EAST
         elif diff == (-1, 0):
+            print("WEST")
             return Directions.WEST
         elif diff == (0, 1):
+            print("NORTH")
             return Directions.NORTH
         elif diff == (0, -1):
+            print("SOUTH")
             return Directions.SOUTH
         else:
             raise ValueError("Invalid diff value: {}".format(diff))
