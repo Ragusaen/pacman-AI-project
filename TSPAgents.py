@@ -2,13 +2,15 @@ import copy
 import time
 import timeit
 
-from networkx.algorithms.approximation.traveling_salesman import traveling_salesman_problem
+from networkx.algorithms.approximation.traveling_salesman import traveling_salesman_problem, simulated_annealing_tsp, \
+    greedy_tsp
 from networkx.algorithms.shortest_paths.unweighted import single_target_shortest_path_length
-from networkx.algorithms.shortest_paths.weighted import single_source_dijkstra_path, single_source_dijkstra
+from networkx.algorithms.shortest_paths.weighted import single_source_dijkstra_path, single_source_dijkstra, \
+    all_pairs_dijkstra
 from networkx.utils.misc import pairwise
 
 from layout import Layout
-from pacman import Directions
+from pacman import Directions, TIME_PENALTY
 from game import Agent
 import random
 import game
@@ -57,14 +59,34 @@ class TSPAgent(game.Agent):
                 pacman_pos = (int(pos[0]), int(pos[1]))
                 important_nodes.add(pacman_pos)
 
-        self.cycle = traveling_salesman_problem(self.graph, nodes=important_nodes)
-        pi = self.cycle.index(pacman_pos)
-        self.cycle = list(self.cycle[pi + 1:] + self.cycle[:pi])
+        self.cycle: list[tuple[int,int]] = traveling_salesman_problem(self.graph, nodes=important_nodes)[:-1]
+        self.sps = dict(all_pairs_dijkstra(self.graph))
+
+    def heuristic(self, state: GameState):
+        # Compute heuristic value for state. Remove all non-important nodes from cycle. Find closest node in self.cycle,
+        # compute distance of shortest paths between nodes.
+        important_nodes = set(state.getFood().asList())
+        new_cycle = [n for n in self.cycle if n in important_nodes]
+
+        pacman_pos = state.getPacmanPosition()
+        pacman_pos = (int(pacman_pos[0]), int(pacman_pos[1]))
+
+        closest_node = min(new_cycle, key=lambda p: self.sps[pacman_pos][0][p])
+        cni = new_cycle.index(closest_node)
+        new_cycle = new_cycle[cni:] + new_cycle[:cni]
+
+        score = state.getScore() + 500 # Assume 500 score for winning
+        for p in new_cycle:
+            score -= TIME_PENALTY * self.sps[pacman_pos][0][p]
+            pacman_pos = p
+            score += 10 # 10 score for each food eaten
+
+        return score
 
     def getAction(self, state : GameState):
         # Time limit: approx 1 second
         # Look-up offline policy or online search with MCTS/LRTDP using some pre-computed value function?
-        t0 = time.time()
+        print(self.heuristic(state))
         g = copy.deepcopy(self.graph)
 
         pacman_pos = state.getPacmanPosition()
@@ -125,7 +147,6 @@ class TSPAgent(game.Agent):
 
         next = sp[1][closest_food][1]
         diff = (next[0] - pacman_pos[0], next[1] - pacman_pos[1])
-        print(time.time() - t0)
         if diff == (1, 0):
             return Directions.EAST
         elif diff == (-1, 0):
