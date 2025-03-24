@@ -41,7 +41,6 @@ def build_graph(layout: Layout) -> nx.Graph:
 class TSPPlanningAgent(game.Agent):
     def __init__(self, layout: Layout, **kwargs):
         super().__init__()
-        print(layout)
         self.layout = layout
         self.graph: nx.Graph = None
         self.cycle: list[tuple[int,int]] = None
@@ -67,6 +66,7 @@ class TSPPlanningAgent(game.Agent):
     def heuristic(self, state: GameState):
         # Compute heuristic value for state. Remove all non-important nodes from cycle. Find closest node in self.cycle,
         # compute distance of shortest paths between nodes.
+        # return len(state.getFood().asList()) * 10 + state.getScore()
         important_nodes = set(state.getFood().asList())
         new_cycle = [n for n in self.cycle if n in important_nodes]
 
@@ -77,19 +77,17 @@ class TSPPlanningAgent(game.Agent):
         cni = new_cycle.index(closest_node)
         new_cycle = new_cycle[cni:] + new_cycle[:cni]
 
-        score = state.getScore() + 500 # Assume 500 score for winning
+        rest_score = 500 # Assume 500 score for winning
         for p in new_cycle:
-            score -= TIME_PENALTY * self.sps[pacman_pos][0][p]
+            rest_score -= TIME_PENALTY * self.sps[pacman_pos][0][p]
             pacman_pos = p
-            score += 10 # 10 score for each food eaten
+            rest_score += 10 # 10 score for each food eaten
 
-        return score
+        return state.getScore() + 0.5 * rest_score
 
     def getAction(self, state : GameState):
-        best_action = self.getExpectedScoreNextKSteps(state, 1)[1]
+        best_action = self.getExpectedScoreNextKSteps(state, 2)[1]
         
-        print("Best action: ", best_action)
-
         return best_action
         
     def getStatesProbDistribution(self, state: GameState):
@@ -118,8 +116,8 @@ class TSPPlanningAgent(game.Agent):
         for combination in all_ghosts_actions_combinations:
             successor = state.deepCopy()
             for ghost_index, action in enumerate(combination):
-                # if action in successor.getLegalActions(ghost_index + 1):
-                successor = successor.generateSuccessor(ghost_index + 1, action)
+                if action in successor.getLegalActions(ghost_index + 1):
+                    successor = successor.generateSuccessor(ghost_index + 1, action)
             successor_states_probabilities[successor] = state_probabilities[combination]
 
         # for successor, prob in successor_states_probabilities.items():
@@ -137,21 +135,22 @@ class TSPPlanningAgent(game.Agent):
             return state.getScore(), None
 
         if k == 0:
-            print(state)
-            print("Heuristic: ", self.heuristic(state))
             return self.heuristic(state), None
         else:
             successor_states_probabilities = self.getStatesProbDistribution(state)
 
-            max_expected_score = -float('inf')
+            action_scores = {}
             for action in state.getLegalActions(0):
-                expected_score = 0
-                for successor, prob in successor_states_probabilities.items():
-                    new_state = successor.deepCopy()
-                    new_state = new_state.generateSuccessor(0, action)
-                    expected_score += prob * self.getExpectedScoreNextKSteps(new_state, k - 1)[0]
-                if expected_score > max_expected_score:
-                    max_expected_score = expected_score
-                    best_action = action
+                new_state = state.generateSuccessor(0, action)
+                if new_state.isLose():
+                    action_scores[action] = new_state.getScore()
+                else:
+                    action_scores[action] = 0
+                    for successor, prob in successor_states_probabilities.items():
+                        new_state = successor.deepCopy()
+                        new_state = new_state.generateSuccessor(0, action)
+                        action_scores[action] += prob * self.getExpectedScoreNextKSteps(new_state, k - 1)[0]
 
-            return max_expected_score, best_action
+            best_action = max(action_scores, key=action_scores.get)
+            print(action_scores)
+            return action_scores[best_action], best_action

@@ -37,6 +37,18 @@ def build_graph(layout: Layout) -> nx.Graph:
 
 
 class TSPAgent(game.Agent):
+    """
+    TSP Agent that uses a Traveling Salesman Problem (TSP) and Greedy approach to find the shortest path to collect food.
+
+    The agent precomputes the TSP cycle. The goal is to follow this cycle to collect food.
+
+    Online, it removes the nodes with the ghosts (and the neighbours) from the graph and computes the shortest path to
+    the closest food. The weighs on the graph are based on 3 factors:
+    1. Isolation: The ratio of the number of neighbours that are important nodes to the total number of neighbours. This
+    is to avoid leaving foods behind. The more isolated, the lower weight, i.e. more likely to go there.
+    2. Cycle cost: Edges that are in the TSP cycle have their weight lowered. This is to encourage to follow the cycle.
+    3. Danger: Edges that lead closer to the ghosts have their weight increased. This is to avoid going near the ghosts.
+    """
     def __init__(self, layout: Layout, **kwargs):
         super().__init__()
         print(layout)
@@ -66,7 +78,6 @@ class TSPAgent(game.Agent):
     def getAction(self, state : GameState):
         # Time limit: approx 1 second
         # Look-up offline policy or online search with MCTS/LRTDP using some pre-computed value function?
-        t0 = time.time()
         g = copy.deepcopy(self.graph)
 
         pacman_pos = state.getPacmanPosition()
@@ -80,24 +91,10 @@ class TSPAgent(game.Agent):
             pos = ghost_state.configuration.pos
             pos = (int(pos[0]), int(pos[1]))
 
-            if pos not in g.nodes:
-                continue
-
-            d: dict[tuple[int,int], int] = dict(single_target_shortest_path_length(g, pos))
-
-            for n in list(g.neighbors(pos)):
-                if n in g.nodes and n != pacman_pos:
-                    g.remove_node(n)
-                    if n in important_nodes:
-                        important_nodes.remove(n)
-
-            g.remove_node(pos)
-            if pos in important_nodes:
-                important_nodes.remove(pos)
-
-            for node in g.nodes:
-                if node in d and node in g.nodes:
-                    g.nodes[node]['danger'] = max(1 / (1 + d[node]), g.nodes[node]['danger'])
+            if pos in g.nodes:
+                g.remove_node(pos)
+                if pos in important_nodes:
+                    important_nodes.remove(pos)
 
         assert all(node in g.nodes for node in important_nodes)
 
@@ -111,14 +108,9 @@ class TSPAgent(game.Agent):
 
         for u, v in g.edges:
             cycle_cost = self.cycle.index(v) / len(self.cycle) if v in self.cycle else 1.0
-            g[u][v]['weight'] = 1 * max(g.nodes[u]['danger'], g.nodes[v]['danger']) + 5 * min(g.nodes[u]['isolation'], g.nodes[v]['isolation']) + 1 * cycle_cost
-
+            g[u][v]['weight'] = 10 * min(g.nodes[u]['isolation'], g.nodes[v]['isolation']) + 5 * cycle_cost
 
         g.nodes[pacman_pos]['is_pacman']=True
-        # pos = nx.spring_layout(g)
-        # nx.draw(g, pos, with_labels=True)
-        # nx.draw_networkx_edge_labels(g, pos, edge_labels=nx.get_edge_attributes(g, 'weight'))
-        # plt.show()
         sp = single_source_dijkstra(g, pacman_pos, weight='weight')
 
         closest_food = min(important_nodes, key=lambda x: sp[0][x] if x in sp[0] else float('inf'))
@@ -129,7 +121,6 @@ class TSPAgent(game.Agent):
         diff = (next[0] - pacman_pos[0], next[1] - pacman_pos[1])
       
 
-        print(time.time() - t0)
         if diff == (1, 0):
             print("EAST")
             return Directions.EAST
