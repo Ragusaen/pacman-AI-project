@@ -85,6 +85,18 @@ class TSPPlanningAgent(game.Agent):
 
         return state.getScore() + 0.5 * rest_score
 
+    def heuristic2(self, state: GameState):
+        # Compute heuristic value for state. Remove all non-important nodes from cycle. Find closest node in self.cycle,
+        # compute distance of shortest paths between nodes.
+        # return len(state.getFood().asList()) * 10 + state.getScore()
+        important_nodes = set(state.getFood().asList())
+        pacman_pos = state.getPacmanPosition()
+
+        closest_food = min(important_nodes, key=lambda food: self.sps[pacman_pos][0][food])
+        furthest_food = max(important_nodes, key=lambda food: self.sps[closest_food][0][food])
+
+        return state.getScore() + 5 * len(important_nodes) + TIME_PENALTY * (self.sps[pacman_pos][0][closest_food] + self.sps[closest_food][0][furthest_food])
+
     def getAction(self, state : GameState):
         best_action = self.getExpectedScoreNextKSteps(state, 2)[1]
         
