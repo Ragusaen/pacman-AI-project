@@ -1,4 +1,6 @@
 import copy
+import time
+import timeit
 
 from networkx.algorithms.approximation.traveling_salesman import traveling_salesman_problem
 from networkx.algorithms.shortest_paths.unweighted import single_target_shortest_path_length
@@ -62,6 +64,7 @@ class TSPAgent(game.Agent):
     def getAction(self, state : GameState):
         # Time limit: approx 1 second
         # Look-up offline policy or online search with MCTS/LRTDP using some pre-computed value function?
+        t0 = time.time()
         g = copy.deepcopy(self.graph)
 
         pacman_pos = state.getPacmanPosition()
@@ -105,8 +108,9 @@ class TSPAgent(game.Agent):
                 g.nodes[p]['isolation'] = sum(1 for n in g.neighbors(p) if n in important_nodes) / N
 
         for u, v in g.edges:
-            cycle_cost = self.cycle.index(v) if v in self.cycle else len(self.cycle)
-            g[u][v]['weight'] = max(g.nodes[u]['danger'], g.nodes[v]['danger']) + min(g.nodes[u]['isolation'], g.nodes[v]['isolation']) + cycle_cost
+            cycle_cost = self.cycle.index(v) / len(self.cycle) if v in self.cycle else 1.0
+            g[u][v]['weight'] = 1 * max(g.nodes[u]['danger'], g.nodes[v]['danger']) + 5 * min(g.nodes[u]['isolation'], g.nodes[v]['isolation']) + 1 * cycle_cost
+
 
         g.nodes[pacman_pos]['is_pacman']=True
         # pos = nx.spring_layout(g)
@@ -121,6 +125,7 @@ class TSPAgent(game.Agent):
 
         next = sp[1][closest_food][1]
         diff = (next[0] - pacman_pos[0], next[1] - pacman_pos[1])
+        print(time.time() - t0)
         if diff == (1, 0):
             return Directions.EAST
         elif diff == (-1, 0):
